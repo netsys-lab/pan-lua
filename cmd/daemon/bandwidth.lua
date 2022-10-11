@@ -185,7 +185,7 @@ function panapi.Initialize(prefs, laddr, raddr, ps)
 end
 
 function panapi.SetPreferences(prefs, laddr, raddr)
-   panapi.Log("Update Preferences [" .. laddr, "|", raddr .. "] Profile:", prefs.ConnCapacityProfile)
+   panapi.Log("Update Preferences [" .. laddr, "|", raddr .. "] Profile:", tprint(prefs))
    if prefs.ConnCapacityProfile == "CapacitySeeking" then
 
    end

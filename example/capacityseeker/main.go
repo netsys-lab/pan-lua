@@ -60,20 +60,18 @@ func main() {
 		log.Fatalln("Either specify -port for server or -remote for client")
 	}
 
-	var (
-		qconf    quic.Config
-		selector pan.Selector
-		err      error
-	)
 	tlsConf := lib.DummyTLSConfig()
-	selector, qconf.Tracer, err = lib.RPCClientHelper()
-	if err != nil {
-		log.Fatalln(err)
-	}
 	if len(local) > 0 {
 		log.Println(runServer(local, &tlsConf))
 	} else {
-		err := runClient(bytes, remote, selector, &qconf, &tlsConf)
+		var qconf quic.Config
+		selector, tracer, err := lib.RPCClientHelper()
+		selector.SetPreferences(map[string]string{"ConnCapacityProfile": p})
+		if err != nil {
+			log.Fatalln(err)
+		}
+		qconf.Tracer = tracer
+		err = runClient(bytes, remote, selector, &qconf, &tlsConf)
 		if err != nil {
 			log.Println(err)
 		}
