@@ -118,7 +118,7 @@ func NewSelectorServer(selector ServerSelector) *SelectorServer {
 }
 
 func (s *SelectorServer) Initialize(args, resp *SelectorMsg) error {
-	//log.Println("Initialize invoked")
+	log.Println("Initialize invoked")
 	paths := make([]*pan.Path, len(args.Paths))
 	for i, p := range args.Paths {
 		paths[i] = p.PanPath()
@@ -182,6 +182,7 @@ type SelectorClient struct {
 	connectionPreferences map[string]string
 	client                *Client
 	paths                 map[pan.PathFingerprint]*pan.Path
+	last                  *pan.Path
 	local                 *pan.UDPAddr
 	remote                *pan.UDPAddr
 	l                     *log.Logger
@@ -189,7 +190,12 @@ type SelectorClient struct {
 
 func NewSelectorClient(client *Client) selector.Selector {
 	client.l.Printf("RPC connection etablished")
-	return &SelectorClient{map[string]string{}, client, map[pan.PathFingerprint]*pan.Path{}, nil, nil, client.l}
+	return &SelectorClient{map[string]string{}, client, map[pan.PathFingerprint]*pan.Path{}, nil, nil, nil, client.l}
+}
+
+// LastPath implements selector.Selector
+func (s *SelectorClient) LastPath() *pan.Path {
+	return s.last
 }
 
 func (s *SelectorClient) Initialize(local, remote pan.UDPAddr, paths []*pan.Path) {
@@ -239,7 +245,8 @@ func (s *SelectorClient) Path() *pan.Path {
 		s.l.Fatalln(err)
 	}
 	if msg.Fingerprint != nil {
-		return s.paths[*msg.Fingerprint]
+		s.last = s.paths[*msg.Fingerprint]
+		return s.last
 	}
 	return nil
 }

@@ -90,3 +90,11 @@ function stats.LossTimerCanceled(laddr, raddr)
 
 function stats.Debug(laddr, raddr)
 ```
+
+
+## Pitfalls
+
+Both sides of an RPC service need to be recompiled if the Go version changes.
+
+In other words, the daemon as well as the library need to be compiled
+under the same Go version.

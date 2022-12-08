@@ -14,3 +14,7 @@ type DefaultSelector struct {
 func (s *DefaultSelector) SetPreferences(map[string]string) error {
 	return nil
 }
+
+func (s *DefaultSelector) Path() *pan.Path {
+	return s.DefaultSelector.Path()
+}

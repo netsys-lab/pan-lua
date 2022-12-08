@@ -64,18 +64,32 @@ func main() {
 	if len(local) > 0 {
 		log.Println(runServer(local, &tlsConf))
 	} else {
-		var qconf quic.Config
-		selector, tracer, err := lib.RPCClientHelper()
-		selector.SetPreferences(map[string]string{"ConnCapacityProfile": p})
-		if err != nil {
-			log.Fatalln(err)
+		var (
+			qconf    quic.Config
+			selector pan.Selector
+		)
+
+		if daemontracer || daemonselector {
+			s, tracer, err := lib.RPCClientHelper()
+			if err != nil {
+				log.Println(err)
+			}
+			if daemonselector && s != nil {
+				s.SetPreferences(map[string]string{"ConnCapacityProfile": p})
+				selector = s
+			}
+			if daemontracer && tracer != nil {
+				qconf.Tracer = tracer
+			}
+		} else {
+			log.Println("Skipping Daemon connection")
 		}
-		qconf.Tracer = tracer
-		err = runClient(bytes, remote, selector, &qconf, &tlsConf)
+		err := runClient(bytes, remote, selector, &qconf, &tlsConf)
 		if err != nil {
 			log.Println(err)
 		}
 	}
+	log.Println("bye")
 }
 
 func myCopy(w io.Writer, r io.Reader, c chan int) (total int64, err error) {
@@ -106,70 +120,88 @@ func myCopy(w io.Writer, r io.Reader, c chan int) (total int64, err error) {
 	return
 }
 
-func report(c chan int, verbose bool) {
+func report(c chan pan.ConnStats, verbose bool) {
 	total := 0
 	subtotal := 0
 	ticker := time.Tick(time.Second)
-	begin := time.Now()
+	paths := map[string]int{}
 	for {
 		select {
-		case bytes := <-c:
-			subtotal += bytes
-		case <-ticker:
+		case stats := <-c:
+			subtotal += stats.Bytes
+			if stats.Path != nil {
+				fp := string(stats.Path.Fingerprint)
+				paths[fp] += stats.Bytes
+			}
+		case t := <-ticker:
 			total += subtotal
-			dur := time.Since(begin)
-			fmt.Printf("%d,%d,%d\n", int(dur.Seconds()), subtotal, total)
+			for fp, bytes := range paths {
+				fmt.Printf("%s,%s,%d\n", t, fp, bytes)
+			}
 			if verbose {
 				log.Printf("%.3f kb/s", float64(subtotal)/1000)
 			}
 			subtotal = 0
-
+			paths = map[string]int{}
 		}
 	}
 }
 
 func runServer(local string, tlsconf *tls.Config) error {
-	addr, err := pan.ResolveUDPAddr(local)
+	ctx := context.Background()
+	addr, err := pan.ResolveUDPAddr(ctx, local)
 	if err != nil {
 		return err
 	}
-	listener, err := pan.ListenQUIC(context.TODO(), netaddr.IPPortFrom(addr.IP, addr.Port), nil, tlsconf, nil)
+	stats := make(chan pan.ConnStats)
+	go report(stats, false)
+	listener, err := pan.ListenQUICStats(ctx, netaddr.IPPortFrom(addr.IP, addr.Port), nil, tlsconf, nil, stats)
 	if err != nil {
 		return err
 	}
 	running := false
-	c := make(chan int)
+
 	for {
-		session, err := listener.Accept(context.TODO())
+		session, err := listener.Accept(ctx)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-		connection, err := session.AcceptStream(context.TODO())
+		connection, err := session.AcceptStream(ctx)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
 		if !running {
-			go report(c, true)
+			//go report(c, true)
 			running = true
 		}
 		log.Printf("Got Connection from: %s", session.RemoteAddr())
 		if err != nil {
 			log.Println(err)
 		} else {
-			go myCopy(ioutil.Discard, connection, c)
+			go io.Copy(ioutil.Discard, connection)
+			//go myCopy(ioutil.Discard, connection, c)
 		}
 	}
 }
 
 func runClient(bytes int64, remote string, selector pan.Selector, qconf *quic.Config, tlsConf *tls.Config) error {
-	addr, err := pan.ResolveUDPAddr(remote)
+	log.Println("running client")
+	ctx := context.Background()
+	addr, err := pan.ResolveUDPAddr(ctx, remote)
 	if err != nil {
+		log.Println("error", err)
 		return err
+	} else {
+		log.Printf("resolved address: %s", addr)
 	}
-	session, err := pan.DialQUIC(
-		context.Background(),
+
+	stats := make(chan pan.ConnStats)
+	go report(stats, false)
+
+	session, err := pan.DialQUICStats(
+		ctx,
 		netaddr.IPPort{},
 		addr,
 		nil,
@@ -177,26 +209,31 @@ func runClient(bytes int64, remote string, selector pan.Selector, qconf *quic.Co
 		"",
 		tlsConf,
 		qconf,
+		stats,
 	)
 	if err != nil {
+		log.Println("error", err)
 		return err
+	} else {
+		log.Println("dialled session")
 	}
 
 	stream, err := session.OpenStream() //Sync(context.Background())
 
 	if err != nil {
+		log.Println("error", err)
 		return fmt.Errorf("Initate error: %s", err)
 	}
 	defer stream.Close()
 
-	c := make(chan int)
-	go report(c, false)
-
 	reader := io.LimitReader(rand.Reader, bytes)
 	begin := time.Now()
-	n, err := myCopy(stream, reader, c)
+	//n, err := myCopy(stream, reader, c)
+	n, err := io.Copy(stream, reader)
 	if err == nil {
 		log.Printf("Average: %.3f kb/s", float64(n)/(1000*time.Since(begin).Seconds()))
+	} else {
+		log.Println("error", err)
 	}
 	return err
 }
