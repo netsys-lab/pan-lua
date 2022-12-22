@@ -35,6 +35,7 @@ func main() {
 		remote, local, p                             string
 		server, client, daemontracer, daemonselector bool
 		bytes                                        int64
+		paths                                        int
 	)
 
 	flag.StringVar(&remote, "remote", "", `[Client] Remote (i.e. the server's) Address
@@ -45,6 +46,7 @@ func main() {
 	flag.BoolVar(&daemontracer, "daemontracer", false, "use PANAPI daemon tracer")
 	flag.BoolVar(&daemonselector, "daemonselector", false, "use PANAPI daemon selector")
 	flag.Int64Var(&bytes, "bytes", 1000*1000*10, "amount of bytes to transfer during experiment")
+	flag.IntVar(&paths, "paths", 10, "how many different paths to track in logging")
 
 	flag.Parse()
 
@@ -62,7 +64,7 @@ func main() {
 
 	tlsConf := lib.DummyTLSConfig()
 	if len(local) > 0 {
-		log.Println(runServer(local, &tlsConf))
+		log.Println(runServer(local, &tlsConf, paths))
 	} else {
 		var (
 			qconf    quic.Config
@@ -84,7 +86,7 @@ func main() {
 		} else {
 			log.Println("Skipping Daemon connection")
 		}
-		err := runClient(bytes, remote, selector, &qconf, &tlsConf)
+		err := runClient(bytes, remote, selector, &qconf, &tlsConf, paths)
 		if err != nil {
 			log.Println(err)
 		}
@@ -120,41 +122,41 @@ func myCopy(w io.Writer, r io.Reader, c chan int) (total int64, err error) {
 	return
 }
 
-func report(c chan pan.ConnStats, verbose bool) {
-	total := 0
-	subtotal := 0
+func report(c chan pan.ConnStats, verbose bool, isread bool, paths int) {
+	last := time.Now()
+	old := last.Unix()
+	for ; last.Unix() == old; last = time.Now() {
+		// FIXME UGLY
+		// busy wait until second rollover
+	}
+
 	ticker := time.Tick(time.Second)
-	paths := map[string]int{}
+
+	u := last.Unix()
+
 	for {
 		select {
 		case stats := <-c:
-			subtotal += stats.Bytes
-			if stats.Path != nil {
+			if stats.Path != nil && stats.WasRead == isread {
 				fp := string(stats.Path.Fingerprint)
-				paths[fp] += stats.Bytes
+				selectorDuration := stats.SelectorComplete.Sub(stats.Start)
+				comDuration := stats.Complete.Sub(stats.SelectorComplete)
+				fmt.Printf("%d,%s,%d,%d,%d\n", u, fp, stats.Bytes, selectorDuration.Microseconds(), comDuration.Microseconds())
 			}
-		case t := <-ticker:
-			total += subtotal
-			for fp, bytes := range paths {
-				fmt.Printf("%s,%s,%d\n", t, fp, bytes)
-			}
-			if verbose {
-				log.Printf("%.3f kb/s", float64(subtotal)/1000)
-			}
-			subtotal = 0
-			paths = map[string]int{}
+		case last = <-ticker:
+			u = last.Unix()
 		}
 	}
 }
 
-func runServer(local string, tlsconf *tls.Config) error {
+func runServer(local string, tlsconf *tls.Config, paths int) error {
 	ctx := context.Background()
 	addr, err := pan.ResolveUDPAddr(ctx, local)
 	if err != nil {
 		return err
 	}
 	stats := make(chan pan.ConnStats)
-	go report(stats, false)
+	go report(stats, false, true, paths)
 	listener, err := pan.ListenQUICStats(ctx, netaddr.IPPortFrom(addr.IP, addr.Port), nil, tlsconf, nil, stats)
 	if err != nil {
 		return err
@@ -186,7 +188,7 @@ func runServer(local string, tlsconf *tls.Config) error {
 	}
 }
 
-func runClient(bytes int64, remote string, selector pan.Selector, qconf *quic.Config, tlsConf *tls.Config) error {
+func runClient(bytes int64, remote string, selector pan.Selector, qconf *quic.Config, tlsConf *tls.Config, paths int) error {
 	log.Println("running client")
 	ctx := context.Background()
 	addr, err := pan.ResolveUDPAddr(ctx, remote)
@@ -198,7 +200,7 @@ func runClient(bytes int64, remote string, selector pan.Selector, qconf *quic.Co
 	}
 
 	stats := make(chan pan.ConnStats)
-	go report(stats, false)
+	go report(stats, false, false, paths)
 
 	session, err := pan.DialQUICStats(
 		ctx,

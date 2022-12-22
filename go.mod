@@ -3,6 +3,7 @@ module github.com/netsys-lab/pan-lua
 go 1.17
 
 require (
+	github.com/aarzilli/golua v0.0.0-20210507130708-11106aa57765
 	github.com/lucas-clemente/quic-go v0.26.0
 	github.com/netsec-ethz/scion-apps v0.5.0
 	github.com/yuin/gopher-lua v0.0.0-20220504180219-658193537a64
@@ -64,4 +65,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace github.com/netsec-ethz/scion-apps => github.com/netsys-lab/scion-apps v0.1.1-0.20221208180917-05cb6b546e7f
+replace github.com/netsec-ethz/scion-apps => github.com/netsys-lab/scion-apps v0.1.1-0.20221216142624-d46b7e281f53

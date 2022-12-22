@@ -11,19 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package lua
+package gopherlua
 
 import (
 	//"io/ioutil"
-	"errors"
 	"log"
+	"os"
 	"sync"
 
-	"github.com/aarzilli/golua/lua"
+	lua "github.com/yuin/gopher-lua"
 )
 
 type State struct {
-	*lua.State
+	*lua.LState
 	sync.Mutex
 	*log.Logger
 }
@@ -37,23 +37,16 @@ func NewState() *State {
 	return &State{L, sync.Mutex{}, l}
 }
 
-func (s *State) push_string_map_string_as_table(m map[string]string) {
-	s.NewTable()
-	for k, v := range m {
-		s.PushString(k)
-		s.PushString(v)
-		s.SetTable(-3)
-	}
-}
-
 func (s *State) LoadScript(fname string) error {
-	/*file, err := os.Open(fname)
+	file, err := os.Open(fname)
 	if err != nil {
 		return err
-	}*/
-	s.OpenLibs()
-	if s.LoadFile(fname) != 0 {
-		return errors.New(s.ToString(-1))
 	}
-	return s.Call(0, 0)
+	if fn, err := s.Load(file, fname); err != nil {
+		return err
+	} else {
+		s.Printf("loaded selector from file %s", fname)
+		s.Push(fn)
+		return s.PCall(0, lua.MultRet, nil)
+	}
 }
