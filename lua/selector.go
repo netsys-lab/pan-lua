@@ -264,7 +264,13 @@ func (s *LuaSelector) Initialize(prefs map[string]string, local, remote pan.UDPA
 	}
 	s.PushString(local.String())
 	s.PushString(remote.String())
-	s.PushGoStruct(paths)
+	s.NewTable()
+	for i, path := range paths {
+		s.PushInteger(int64(i + 1))
+		s.PushGoStruct(path)
+		s.SetTable(-3)
+	}
+	//	s.PushGoStruct(paths)
 
 	err := s.Call(4, 0)
 
