@@ -169,9 +169,17 @@ func (s state) set_paths(addr pan.UDPAddr, ppaths []*pan.Path) (lpaths []*lua.LT
 	return
         }*/
 
+type state struct {
+	ppaths map[string]*pan.Path
+}
+
+func new_state() state {
+	return state{make(map[string]*pan.Path)}
+}
+
 type LuaSelector struct {
 	*State
-	//	state
+	state
 	//mod *lua.LTable
 	d time.Duration
 }
@@ -222,7 +230,7 @@ func NewSelector(state *State) rpc.ServerSelector {
 
 	state.SetGlobal("panapi")
 
-	s := &LuaSelector{state, time.Second}
+	s := &LuaSelector{state, new_state(), time.Second}
 
 	go func(s *LuaSelector) {
 		old := time.Now()
@@ -266,8 +274,9 @@ func (s *LuaSelector) Initialize(prefs map[string]string, local, remote pan.UDPA
 	s.PushString(remote.String())
 	s.NewTable()
 	for i, path := range paths {
+		s.state.ppaths[string(path.Fingerprint)] = path
 		s.PushInteger(int64(i + 1))
-		s.PushGoStruct(path)
+		s.pushLuaPath(path)
 		s.SetTable(-3)
 	}
 	//	s.PushGoStruct(paths)
@@ -341,13 +350,8 @@ func (s *LuaSelector) Path(local, remote pan.UDPAddr) (*pan.Path, error) {
 		log.Println(err)
 		return nil, err
 	}
-	if !s.IsGoStruct(-1) {
-		panic("Not a go struct")
-	}
-	var path *pan.Path
-	rawptr := s.ToUserdata(-1)
-	path = (*pan.Path)(rawptr)
-	return path, err
+	s.GetField(-1, "Fingerprint")
+	return s.state.ppaths[s.ToString(-1)], err
 
 	//call the "Path" function from the Lua script
 	//expect 1 return value
