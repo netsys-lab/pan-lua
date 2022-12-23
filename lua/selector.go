@@ -352,7 +352,7 @@ func (s *LuaSelector) Path(local, remote pan.UDPAddr) (*pan.Path, error) {
 	}
 	s.GetField(-1, "Fingerprint")
 	fingerprint := s.ToString(-1)
-	s.Pop(1)
+	s.Pop(2) // pop path as well as its fingerprint
 	return s.state.ppaths[fingerprint], err
 
 	//call the "Path" function from the Lua script
