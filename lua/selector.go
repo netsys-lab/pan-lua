@@ -1,4 +1,4 @@
-// Copyright 2021,2022 Thorben Krüger (thorben.krueger@ovgu.de)
+// Copyright 2021, 2022 Thorben Krüger (thorben.krueger@ovgu.de)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -80,40 +80,50 @@ func (s *State) pushLuaPath(path *pan.Path) {
 			}
 			s.SetField(-2, "Bandwidth")
 
-			linktypes := lua.LTable{}
-			for _, l := range path.Metadata.LinkType {
-				linktypes.Append(lua.LNumber(l))
+			s.NewTable()
+			for i, linktype := range path.Metadata.LinkType {
+				s.PushInteger(int64(i + 1))
+				s.PushInteger(int64(linktype))
+				s.SetTable(-3)
 			}
-			meta.RawSetString("LinkType", &linktypes)
+			s.SetField(-2, "LinkType")
 
-			internalhops := lua.LTable{}
-			for _, h := range path.Metadata.InternalHops {
-				internalhops.Append(lua.LNumber(h))
+			s.NewTable()
+			for i, internalHops := range path.Metadata.InternalHops {
+				s.PushInteger(int64(i + 1))
+				s.PushInteger(int64(internalHops))
+				s.SetTable(-3)
+
 			}
-			meta.RawSetString("InternalHops", &internalhops)
+			s.SetField(-2, "InternalHops")
 
-			notes := lua.LTable{}
-			for _, n := range path.Metadata.Notes {
-				notes.Append(lua.LString(n))
+			s.NewTable()
+			for i, note := range path.Metadata.Notes {
+				s.PushInteger(int64(i + 1))
+				s.PushString(note)
+				s.SetTable(-3)
 			}
-			meta.RawSetString("Notes", &notes)
+			s.SetField(-2, "Notes")
 
-			geo := lua.LTable{}
-			for _, g := range path.Metadata.Geo {
-				pos := lua.LTable{}
-				pos.RawSetString("Latitude", lua.LNumber(g.Latitude))
-				pos.RawSetString("Longitude", lua.LNumber(g.Longitude))
-				pos.RawSetString("Address", lua.LString(g.Address))
-				geo.Append(&pos)
+			s.NewTable()
+			for i, geo := range path.Metadata.Geo {
+				s.PushInteger(int64(i + 1))
+				s.NewTable()
+				s.PushInteger(int64(geo.Latitude))
+				s.SetField(-2, "Latitude")
+				s.PushInteger(int64(geo.Longitude))
+				s.SetField(-2, "Longitude")
+				s.PushString(geo.Address)
+				s.SetField(-2, "Address")
+				s.SetTable(-3)
 			}
-			meta.RawSetString("Geo", &geo)
-
-			t.RawSetString("Metadata", &meta)
+			s.SetField(-2, "Geo")
+			s.SetField(-2, "Metadata")
 		}
 	}
-	return &t
 }
 
+/*
 func lua_table_slice_to_table(s []*lua.LTable) *lua.LTable {
 	res := lua.LTable{}
 	for _, t := range s {
@@ -157,7 +167,7 @@ func (s state) set_paths(addr pan.UDPAddr, ppaths []*pan.Path) (lpaths []*lua.LT
 		lpaths[i] = lpath
 	}
 	return
-}
+        }*/
 
 type LuaSelector struct {
 	*State
@@ -244,6 +254,19 @@ func (s *LuaSelector) Initialize(prefs map[string]string, local, remote pan.UDPA
 	// s.state.clear_addr(remote)
 	// lpaths := s.set_paths(remote, paths)
 
+	s.NewTable()
+	for k, v := range prefs {
+		s.PushString(v)
+		s.SetField(-2, k)
+	}
+	s.PushString(local.String())
+	s.PushString(remote.String())
+	s.PushGoStruct(paths)
+	s.GetGlobal("panapi")
+	s.GetField(-1, "Initialize")
+	s.Remove(-2)
+	err := s.Call(4, 0)
+
 	//call the "Initialize" function in the Lua script
 	//with two arguments
 	//and don't expect a return value
@@ -259,7 +282,6 @@ func (s *LuaSelector) Initialize(prefs map[string]string, local, remote pan.UDPA
 	// 	lua.LString(remote.String()),
 	// 	lua_table_slice_to_table(lpaths),
 	// )
-	var err error = nil
 	if err != nil {
 		log.Println(err)
 	}
@@ -269,7 +291,22 @@ func (s *LuaSelector) Initialize(prefs map[string]string, local, remote pan.UDPA
 func (s *LuaSelector) SetPreferences(prefs map[string]string, local, remote pan.UDPAddr) error {
 	s.Lock()
 	defer s.Unlock()
-	return nil
+	s.NewTable()
+	for k, v := range prefs {
+		s.PushString(v)
+		s.SetField(-2, k)
+	}
+	s.PushString(local.String())
+	s.PushString(remote.String())
+	s.GetGlobal("panapi")
+	s.GetField(-1, "SetPreferences")
+	s.Remove(-2)
+	err := s.Call(3, 0)
+	if err != nil {
+		log.Println(err)
+	}
+
+	return err
 
 	/*	return s.CallByParam(lua.P{
 		Protect: true,
@@ -284,7 +321,24 @@ func (s *LuaSelector) SetPreferences(prefs map[string]string, local, remote pan.
 func (s *LuaSelector) Path(local, remote pan.UDPAddr) (*pan.Path, error) {
 	s.Lock()
 	defer s.Unlock()
-	return nil, nil
+
+	s.PushString(local.String())
+	s.PushString(remote.String())
+	s.GetGlobal("panapi")
+	s.GetField(-1, "Path")
+	s.Remove(-2)
+	err := s.Call(2, 1)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	if !s.IsGoStruct(-1) {
+		panic("Not a go struct")
+	}
+	var path *pan.Path
+	rawptr := s.ToUserdata(-1)
+	path = (*pan.Path)(rawptr)
+	return path, err
 
 	//call the "Path" function from the Lua script
 	//expect 1 return value
@@ -308,6 +362,16 @@ func (s *LuaSelector) PathDown(local, remote pan.UDPAddr, fp pan.PathFingerprint
 	//s.l.Println("PathDown()")
 	s.Lock()
 	defer s.Unlock()
+
+	s.PushString(local.String())
+	s.PushString(remote.String())
+	s.PushString(string(fp))
+	s.pushLuaPathInterface(pi)
+	s.GetGlobal("panapi")
+	s.GetField(-1, "PathDown")
+	s.Remove(-2)
+	return s.Call(4, 0)
+
 	//s.Printf("PathDown called with fp %v and pi %v", fp, pi)
 	/*	return s.CallByParam(
 		lua.P{
@@ -320,14 +384,25 @@ func (s *LuaSelector) PathDown(local, remote pan.UDPAddr, fp pan.PathFingerprint
 		lua.LString(fp),
 		newLuaPathInterface(pi),
 	)*/
-	return nil
-
 }
 
 func (s *LuaSelector) Refresh(local, remote pan.UDPAddr, paths []*pan.Path) error {
 	s.Println("Refresh()")
 	s.Lock()
 	defer s.Unlock()
+
+	s.PushString(local.String())
+	s.PushString(remote.String())
+	s.PushGoStruct(paths)
+	s.GetGlobal("panapi")
+	s.GetField(-1, "Refresh")
+	s.Remove(-2)
+	if err := s.Call(3, 0); err != nil {
+		log.Println(err)
+		return err
+	}
+
+	return nil
 
 	/*
 		//assume that setpaths is called with all the currently valid options
@@ -348,12 +423,23 @@ func (s *LuaSelector) Refresh(local, remote pan.UDPAddr, paths []*pan.Path) erro
 			lua.LString(remote.String()),
 			lua_table_slice_to_table(lpaths),
 		)*/
-	return nil
 }
 
 func (s *LuaSelector) Close(local, remote pan.UDPAddr) error {
 	s.Lock()
 	defer s.Unlock()
+
+	s.PushString(local.String())
+	s.PushString(remote.String())
+	s.GetGlobal("panapi")
+	s.GetField(-1, "Close")
+	s.Remove(-2)
+	if err := s.Call(2, 0); err != nil {
+		log.Println(err)
+		return err
+	}
+
+	return nil
 
 	/*
 		//call the "selectpath" function from the Lua script
@@ -374,5 +460,4 @@ func (s *LuaSelector) Close(local, remote pan.UDPAddr) error {
 		//s.L.Close()
 		return err
 	*/
-	return nil
 }
