@@ -254,6 +254,9 @@ func (s *LuaSelector) Initialize(prefs map[string]string, local, remote pan.UDPA
 	// s.state.clear_addr(remote)
 	// lpaths := s.set_paths(remote, paths)
 
+	s.GetGlobal("panapi")
+	s.GetField(-1, "Initialize")
+	s.Remove(-2)
 	s.NewTable()
 	for k, v := range prefs {
 		s.PushString(v)
@@ -262,9 +265,7 @@ func (s *LuaSelector) Initialize(prefs map[string]string, local, remote pan.UDPA
 	s.PushString(local.String())
 	s.PushString(remote.String())
 	s.PushGoStruct(paths)
-	s.GetGlobal("panapi")
-	s.GetField(-1, "Initialize")
-	s.Remove(-2)
+
 	err := s.Call(4, 0)
 
 	//call the "Initialize" function in the Lua script
@@ -291,6 +292,11 @@ func (s *LuaSelector) Initialize(prefs map[string]string, local, remote pan.UDPA
 func (s *LuaSelector) SetPreferences(prefs map[string]string, local, remote pan.UDPAddr) error {
 	s.Lock()
 	defer s.Unlock()
+
+	s.GetGlobal("panapi")
+	s.GetField(-1, "SetPreferences")
+	s.Remove(-2)
+
 	s.NewTable()
 	for k, v := range prefs {
 		s.PushString(v)
@@ -298,9 +304,6 @@ func (s *LuaSelector) SetPreferences(prefs map[string]string, local, remote pan.
 	}
 	s.PushString(local.String())
 	s.PushString(remote.String())
-	s.GetGlobal("panapi")
-	s.GetField(-1, "SetPreferences")
-	s.Remove(-2)
 	err := s.Call(3, 0)
 	if err != nil {
 		log.Println(err)
@@ -322,11 +325,11 @@ func (s *LuaSelector) Path(local, remote pan.UDPAddr) (*pan.Path, error) {
 	s.Lock()
 	defer s.Unlock()
 
-	s.PushString(local.String())
-	s.PushString(remote.String())
 	s.GetGlobal("panapi")
 	s.GetField(-1, "Path")
 	s.Remove(-2)
+	s.PushString(local.String())
+	s.PushString(remote.String())
 	err := s.Call(2, 1)
 	if err != nil {
 		log.Println(err)
@@ -363,13 +366,13 @@ func (s *LuaSelector) PathDown(local, remote pan.UDPAddr, fp pan.PathFingerprint
 	s.Lock()
 	defer s.Unlock()
 
+	s.GetGlobal("panapi")
+	s.GetField(-1, "PathDown")
+	s.Remove(-2)
 	s.PushString(local.String())
 	s.PushString(remote.String())
 	s.PushString(string(fp))
 	s.pushLuaPathInterface(pi)
-	s.GetGlobal("panapi")
-	s.GetField(-1, "PathDown")
-	s.Remove(-2)
 	return s.Call(4, 0)
 
 	//s.Printf("PathDown called with fp %v and pi %v", fp, pi)
@@ -391,12 +394,13 @@ func (s *LuaSelector) Refresh(local, remote pan.UDPAddr, paths []*pan.Path) erro
 	s.Lock()
 	defer s.Unlock()
 
-	s.PushString(local.String())
-	s.PushString(remote.String())
-	s.PushGoStruct(paths)
 	s.GetGlobal("panapi")
 	s.GetField(-1, "Refresh")
 	s.Remove(-2)
+	s.PushString(local.String())
+	s.PushString(remote.String())
+	s.PushGoStruct(paths)
+
 	if err := s.Call(3, 0); err != nil {
 		log.Println(err)
 		return err
@@ -429,11 +433,12 @@ func (s *LuaSelector) Close(local, remote pan.UDPAddr) error {
 	s.Lock()
 	defer s.Unlock()
 
-	s.PushString(local.String())
-	s.PushString(remote.String())
 	s.GetGlobal("panapi")
 	s.GetField(-1, "Close")
 	s.Remove(-2)
+	s.PushString(local.String())
+	s.PushString(remote.String())
+
 	if err := s.Call(2, 0); err != nil {
 		log.Println(err)
 		return err
