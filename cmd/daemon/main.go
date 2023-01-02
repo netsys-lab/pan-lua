@@ -81,7 +81,7 @@ func main() {
 		lua_state := gopherlua.NewState()
 		sel = gopherlua.NewSelector(lua_state)
 		stats = gopherlua.NewStats(lua_state)
-		err = lua_state.DoFile(script)
+		err = lua_state.LoadScript(script)
 	}
 
 	if err != nil {
