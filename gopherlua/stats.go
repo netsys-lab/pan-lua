@@ -112,9 +112,9 @@ func NewStats(state *State) rpc.ServerConnectionTracer {
 		"LossTimerCanceled",
 		"Debug",
 	} {
-		//s := fmt.Sprintf("function %s not implemented in script", fn)
+		s := fmt.Sprintf("function %s not implemented in script", fn)
 		mod[fn] = func(L *lua.LState) int {
-			//state.Logger.Println(s)
+			state.Logger.Println(s)
 			return 0
 		}
 	}
@@ -124,7 +124,7 @@ func NewStats(state *State) rpc.ServerConnectionTracer {
 }
 
 func (s *Stats) TracerForConnection(tracer_id uint64, p logging.Perspective, odcid logging.ConnectionID) error {
-	//s.Printf("TracerForConnection")
+	s.Printf("TracerForConnection")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -139,7 +139,7 @@ func (s *Stats) TracerForConnection(tracer_id uint64, p logging.Perspective, odc
 	)
 }
 func (s *Stats) StartedConnection(local, remote *pan.UDPAddr, srcConnID, destConnID logging.ConnectionID) error {
-	//s.Printf("StartedConnection")
+	s.Printf("StartedConnection")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -156,7 +156,7 @@ func (s *Stats) StartedConnection(local, remote *pan.UDPAddr, srcConnID, destCon
 
 }
 func (s *Stats) NegotiatedVersion(local, remote *pan.UDPAddr, chosen logging.VersionNumber, clientVersions, serverVersions []logging.VersionNumber) error {
-	//s.Printf("NegotiatedVersion")
+	s.Printf("NegotiatedVersion")
 	s.Lock()
 	defer s.Unlock()
 	var (
@@ -184,7 +184,7 @@ func (s *Stats) NegotiatedVersion(local, remote *pan.UDPAddr, chosen logging.Ver
 
 }
 func (s *Stats) ClosedConnection(local, remote *pan.UDPAddr, err error) error {
-	//s.Printf("ClosedConnection")
+	s.Printf("ClosedConnection")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -199,7 +199,7 @@ func (s *Stats) ClosedConnection(local, remote *pan.UDPAddr, err error) error {
 
 }
 func (s *Stats) SentTransportParameters(local, remote *pan.UDPAddr, parameters *logging.TransportParameters) error {
-	//s.Printf("SentTransportParameters")
+	s.Printf("SentTransportParameters")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -214,7 +214,7 @@ func (s *Stats) SentTransportParameters(local, remote *pan.UDPAddr, parameters *
 
 }
 func (s *Stats) ReceivedTransportParameters(local, remote *pan.UDPAddr, parameters *logging.TransportParameters) error {
-	//s.Printf("ReceivedTransportParameters")
+	s.Printf("ReceivedTransportParameters")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -229,7 +229,7 @@ func (s *Stats) ReceivedTransportParameters(local, remote *pan.UDPAddr, paramete
 
 }
 func (s *Stats) RestoredTransportParameters(local, remote *pan.UDPAddr, parameters *logging.TransportParameters) error {
-	//s.Printf("RestoredTransportParameters")
+	s.Printf("RestoredTransportParameters")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -244,7 +244,7 @@ func (s *Stats) RestoredTransportParameters(local, remote *pan.UDPAddr, paramete
 
 }
 func (s *Stats) SentPacket(local, remote *pan.UDPAddr, hdr *logging.ExtendedHeader, size logging.ByteCount, ack *logging.AckFrame, frames []logging.Frame) error {
-	//s.Printf("SentPacket: only stub implementation")
+	s.Printf("SentPacket: only stub implementation")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -258,7 +258,7 @@ func (s *Stats) SentPacket(local, remote *pan.UDPAddr, hdr *logging.ExtendedHead
 
 }
 func (s *Stats) ReceivedVersionNegotiationPacket(local, remote *pan.UDPAddr, hdr *logging.Header, versions []logging.VersionNumber) error {
-	//s.Printf("ReceivedVersionNegotiationPacket: only stub implementation")
+	s.Printf("ReceivedVersionNegotiationPacket: only stub implementation")
 	s.Lock()
 	defer s.Unlock()
 	var vs = new(lua.LTable)
@@ -278,7 +278,7 @@ func (s *Stats) ReceivedVersionNegotiationPacket(local, remote *pan.UDPAddr, hdr
 
 }
 func (s *Stats) ReceivedRetry(local, remote *pan.UDPAddr, hdr *logging.Header) error {
-	//s.Printf("ReceivedRetry: only stub implementation")
+	s.Printf("ReceivedRetry: only stub implementation")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -292,7 +292,7 @@ func (s *Stats) ReceivedRetry(local, remote *pan.UDPAddr, hdr *logging.Header) e
 
 }
 func (s *Stats) ReceivedPacket(local, remote *pan.UDPAddr, hdr *logging.ExtendedHeader, size logging.ByteCount, frames []logging.Frame) error {
-	//s.Printf("ReceivedPacket: only stub implementation")
+	s.Printf("ReceivedPacket: only stub implementation")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -306,7 +306,7 @@ func (s *Stats) ReceivedPacket(local, remote *pan.UDPAddr, hdr *logging.Extended
 
 }
 func (s *Stats) BufferedPacket(local, remote *pan.UDPAddr, ptype logging.PacketType) error {
-	//s.Printf("BufferedPacket")
+	s.Printf("BufferedPacket")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -321,7 +321,7 @@ func (s *Stats) BufferedPacket(local, remote *pan.UDPAddr, ptype logging.PacketT
 
 }
 func (s *Stats) DroppedPacket(local, remote *pan.UDPAddr, ptype logging.PacketType, size logging.ByteCount, reason logging.PacketDropReason) error {
-	//s.Printf("DroppedPacket")
+	s.Printf("DroppedPacket")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -338,7 +338,7 @@ func (s *Stats) DroppedPacket(local, remote *pan.UDPAddr, ptype logging.PacketTy
 
 }
 func (s *Stats) UpdatedMetrics(local, remote *pan.UDPAddr, rttStats *rpc.RTTStats, cwnd, bytesInFlight logging.ByteCount, packetsInFlight int) error {
-	//s.Printf("UpdatedMetrics")
+	s.Printf("UpdatedMetrics")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -356,7 +356,7 @@ func (s *Stats) UpdatedMetrics(local, remote *pan.UDPAddr, rttStats *rpc.RTTStat
 
 }
 func (s *Stats) AcknowledgedPacket(local, remote *pan.UDPAddr, level logging.EncryptionLevel, num logging.PacketNumber) error {
-	//s.Printf("AcknowledgedPacket")
+	s.Printf("AcknowledgedPacket")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -372,7 +372,7 @@ func (s *Stats) AcknowledgedPacket(local, remote *pan.UDPAddr, level logging.Enc
 
 }
 func (s *Stats) LostPacket(local, remote *pan.UDPAddr, level logging.EncryptionLevel, num logging.PacketNumber, reason logging.PacketLossReason) error {
-	//s.Printf("LostPacket")
+	s.Printf("LostPacket")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -389,7 +389,7 @@ func (s *Stats) LostPacket(local, remote *pan.UDPAddr, level logging.EncryptionL
 
 }
 func (s *Stats) UpdatedCongestionState(local, remote *pan.UDPAddr, state logging.CongestionState) error {
-	//s.Printf("UpdatedCongestionState")
+	s.Printf("UpdatedCongestionState")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -404,7 +404,7 @@ func (s *Stats) UpdatedCongestionState(local, remote *pan.UDPAddr, state logging
 
 }
 func (s *Stats) UpdatedPTOCount(local, remote *pan.UDPAddr, value uint32) error {
-	//s.Printf("UpdatedPTOCount")
+	s.Printf("UpdatedPTOCount")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -419,7 +419,7 @@ func (s *Stats) UpdatedPTOCount(local, remote *pan.UDPAddr, value uint32) error 
 
 }
 func (s *Stats) UpdatedKeyFromTLS(local, remote *pan.UDPAddr, level logging.EncryptionLevel, p logging.Perspective) error {
-	//s.Printf("UpdatedKeyFromTLS")
+	s.Printf("UpdatedKeyFromTLS")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -435,7 +435,7 @@ func (s *Stats) UpdatedKeyFromTLS(local, remote *pan.UDPAddr, level logging.Encr
 
 }
 func (s *Stats) UpdatedKey(local, remote *pan.UDPAddr, generation logging.KeyPhase, rmte bool) error {
-	//s.Printf("UpdatedKey")
+	s.Printf("UpdatedKey")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -451,7 +451,7 @@ func (s *Stats) UpdatedKey(local, remote *pan.UDPAddr, generation logging.KeyPha
 
 }
 func (s *Stats) DroppedEncryptionLevel(local, remote *pan.UDPAddr, level logging.EncryptionLevel) error {
-	//s.Printf("DroppedEncryptionLevel")
+	s.Printf("DroppedEncryptionLevel")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -466,7 +466,7 @@ func (s *Stats) DroppedEncryptionLevel(local, remote *pan.UDPAddr, level logging
 
 }
 func (s *Stats) DroppedKey(local, remote *pan.UDPAddr, generation logging.KeyPhase) error {
-	//s.Printf("DroppedKey")
+	s.Printf("DroppedKey")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -481,7 +481,7 @@ func (s *Stats) DroppedKey(local, remote *pan.UDPAddr, generation logging.KeyPha
 
 }
 func (s *Stats) SetLossTimer(local, remote *pan.UDPAddr, ttype logging.TimerType, level logging.EncryptionLevel, t time.Time) error {
-	//s.Printf("SetLossTimer")
+	s.Printf("SetLossTimer")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -498,7 +498,7 @@ func (s *Stats) SetLossTimer(local, remote *pan.UDPAddr, ttype logging.TimerType
 
 }
 func (s *Stats) LossTimerExpired(local, remote *pan.UDPAddr, ttype logging.TimerType, level logging.EncryptionLevel) error {
-	//s.Printf("LossTimerExpired")
+	s.Printf("LossTimerExpired")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -514,7 +514,7 @@ func (s *Stats) LossTimerExpired(local, remote *pan.UDPAddr, ttype logging.Timer
 
 }
 func (s *Stats) LossTimerCanceled(local, remote *pan.UDPAddr) error {
-	//s.Printf("LossTimerCanceled")
+	s.Printf("LossTimerCanceled")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -528,7 +528,7 @@ func (s *Stats) LossTimerCanceled(local, remote *pan.UDPAddr) error {
 
 }
 func (s *Stats) Close(local, remote *pan.UDPAddr) error {
-	//s.Printf("Close")
+	s.Printf("Close")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
@@ -542,7 +542,7 @@ func (s *Stats) Close(local, remote *pan.UDPAddr) error {
 
 }
 func (s *Stats) Debug(local, remote *pan.UDPAddr, name, msg string) error {
-	//s.Printf("Debug")
+	s.Printf("Debug")
 	s.Lock()
 	defer s.Unlock()
 	return s.CallByParam(
