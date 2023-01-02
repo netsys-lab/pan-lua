@@ -183,7 +183,7 @@ func (s *Stats) NegotiatedVersion(local, remote *pan.UDPAddr, chosen logging.Ver
 	s.Lock()
 	defer s.Unlock()
 	s.GetGlobal(statsName)
-	s.GetField(-1, "NegotiatedVersions")
+	s.GetField(-1, "NegotiatedVersion")
 	s.Remove(-2)
 	s.pushAsLuaString(local)
 	s.pushAsLuaString(remote)
