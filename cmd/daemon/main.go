@@ -28,7 +28,8 @@ import (
 	"github.com/lucas-clemente/quic-go/logging"
 	"github.com/lucas-clemente/quic-go/qlog"
 	"github.com/netsec-ethz/scion-apps/pkg/pan"
-	"github.com/netsys-lab/pan-lua/lua"
+	"github.com/netsys-lab/pan-lua/gopherlua"
+	luajit "github.com/netsys-lab/pan-lua/lua"
 	//"github.com/netsys-lab/pan-lua/dummy"
 	"github.com/netsys-lab/pan-lua/rpc"
 	"github.com/netsys-lab/pan-lua/selector"
@@ -39,11 +40,14 @@ func main() {
 		script string
 		cpulog string
 		sel    rpc.ServerSelector
+		stats  rpc.ServerConnectionTracer
 		err    error
+		jit    bool
 	)
 
 	flag.StringVar(&script, "script", "", "Lua script for path selection")
 	flag.StringVar(&cpulog, "cpulog", "", "Write profiling information to file")
+	flag.BoolVar(&jit, "luajit", false, "Use luajit instead of gopherlua")
 	flag.Parse()
 
 	c := make(chan os.Signal, 1)
@@ -68,10 +72,18 @@ func main() {
 		}
 	}
 
-	lua_state := lua.NewState()
-	sel = lua.NewSelector(lua_state)
-	stats := lua.NewStats(lua_state)
-	err = lua_state.LoadScript(script)
+	if jit {
+		lua_state := luajit.NewState()
+		sel = luajit.NewSelector(lua_state)
+		stats = luajit.NewStats(lua_state)
+		err = lua_state.LoadScript(script)
+	} else {
+		lua_state := gopherlua.NewState()
+		sel = gopherlua.NewSelector(lua_state)
+		stats = gopherlua.NewStats(lua_state)
+		err = lua_state.DoFile(script)
+	}
+
 	if err != nil {
 		log.Printf("Could not load path-selection script: %s", err)
 		log.Println("Falling back to default selector")
