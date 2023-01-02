@@ -60,6 +60,7 @@ type State struct {
 
 func NewState() *State {
 	L := lua.NewState()
+	L.OpenLibs()
 	//l := log.New(ioutil.Discard, "lua ", log.Ltime)
 	l := log.Default()
 	l.SetFlags(log.Ltime | log.Lshortfile)
@@ -139,7 +140,6 @@ func (s *State) LoadScript(fname string) error {
 	if err != nil {
 		return err
 	}*/
-	s.OpenLibs()
 	if s.LoadFile(fname) != 0 {
 		return errors.New(s.ToString(-1))
 	}
