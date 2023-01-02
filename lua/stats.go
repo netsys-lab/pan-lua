@@ -49,8 +49,12 @@ func new_lua_parameters(p *logging.TransportParameters) *Table {
 		}
 		t.String2string["OriginalDestinationConnectionID"] = p.OriginalDestinationConnectionID.String()
 		t.String2string["InitialSourceConnectionID"] = p.InitialSourceConnectionID.String()
-		t.String2string["RetrySourceConnectionID"] = p.RetrySourceConnectionID.String()
-		t.String2string["StatelessResetToken"] = fmt.Sprintf("%x", p.StatelessResetToken)
+		if id := p.RetrySourceConnectionID; id != nil {
+			t.String2string["RetrySourceConnectionID"] = id.String()
+		}
+		if token := p.StatelessResetToken; token != nil {
+			t.String2string["StatelessResetToken"] = fmt.Sprintf("%x", token)
+		}
 		t.String2int["ActiveConnectionIDLimit"] = int64(p.ActiveConnectionIDLimit)
 		t.String2int["MaxDatagramFrameSize"] = int64(p.MaxDatagramFrameSize)
 	}
