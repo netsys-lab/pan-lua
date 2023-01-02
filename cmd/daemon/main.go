@@ -70,7 +70,7 @@ func main() {
 
 	lua_state := lua.NewState()
 	sel = lua.NewSelector(lua_state)
-	//stats := lua.NewStats(lua_state)
+	stats := lua.NewStats(lua_state)
 	err = lua_state.LoadScript(script)
 	if err != nil {
 		log.Printf("Could not load path-selection script: %s", err)
@@ -91,7 +91,7 @@ func main() {
 			return f
 		})
 	//serverselector := rpc.NewServerSelectorFunc(func(raddr,
-	server, err := rpc.NewServer(sel, tracer, nil) //stats)
+	server, err := rpc.NewServer(sel, tracer, stats)
 	if err != nil {
 		log.Fatalln(err)
 	}
