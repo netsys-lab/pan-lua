@@ -92,6 +92,14 @@ func (s *State) Call(nargs, nresults int) error {
 	return nil
 }
 
+func (s *State) GetCField(index int, name *C.char) {
+	C.lua_getfield(s.L, C.int(index), name)
+}
+
+func (s *State) GetCGlobal(name *C.char) {
+	s.GetCField(C.LUA_GLOBALSINDEX, name)
+}
+
 func (s *State) GetField(index int, name string) {
 	C.lua_getfield(s.L, C.int(index), s.strptr(name))
 }
@@ -138,6 +146,10 @@ func (s *State) Remove(index int) {
 
 func (s *State) SetField(index int, key string) {
 	C.lua_setfield(s.L, C.int(index), s.strptr(key))
+}
+
+func (s *State) SetCGlobal(name *C.char) {
+	C.lua_setfield(s.L, C.LUA_GLOBALSINDEX, name)
 }
 
 func (s *State) SetGlobal(name string) {
