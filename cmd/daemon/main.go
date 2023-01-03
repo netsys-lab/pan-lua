@@ -29,7 +29,7 @@ import (
 	"github.com/lucas-clemente/quic-go/qlog"
 	"github.com/netsec-ethz/scion-apps/pkg/pan"
 	"github.com/netsys-lab/pan-lua/gopherlua"
-	luajit "github.com/netsys-lab/pan-lua/lua"
+	luajit "github.com/netsys-lab/pan-lua/luajit"
 	//"github.com/netsys-lab/pan-lua/dummy"
 	"github.com/netsys-lab/pan-lua/rpc"
 	"github.com/netsys-lab/pan-lua/selector"

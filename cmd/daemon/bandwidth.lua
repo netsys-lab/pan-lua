@@ -49,6 +49,10 @@ laddr2switchtime = {}
 -- map local address to transferred bytes on the current path
 laddr2bytes_on_path = {}
 
+function panapi.Log(...)
+   print(...)
+end
+
 -- gets called every second or so
 function panapi.Periodic(seconds)
    tick = tick + 1
