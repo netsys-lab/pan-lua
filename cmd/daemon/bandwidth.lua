@@ -53,6 +53,12 @@ function panapi.Log(...)
    print(...)
 end
 
+
+function panapi.Now()
+   return os.clock()
+end
+
+      
 -- gets called every second or so
 function panapi.Periodic(seconds)
    tick = tick + 1
