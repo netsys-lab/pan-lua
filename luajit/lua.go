@@ -15,7 +15,7 @@ package luajit
 
 /*
    #cgo LDFLAGS: -lluajit-5.1
-   #cgo CFLAGS: -I /usr/include/lua5.1
+   #cgo CFLAGS: -I /usr/include/luajit-2.1
    #include <lauxlib.h>
    #include <lualib.h>
    #include <stdlib.h>
