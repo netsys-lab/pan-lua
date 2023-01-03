@@ -22,6 +22,17 @@ import (
 	"github.com/netsys-lab/pan-lua/rpc"
 )
 
+/*
+   #cgo LDFLAGS: -lluajit-5.1
+   #cgo CFLAGS: -I /usr/include/luajit-2.1
+   #include <lauxlib.h>
+   #include <lualib.h>
+   #include <stdlib.h>
+   #include <stdio.h>
+   #include <lua.h>
+*/
+import "C"
+
 func (s *State) pushLuaPathInterface(intf pan.PathInterface) {
 	s.NewTable()
 	s.PushString(intf.IA.String())
@@ -136,7 +147,11 @@ type LuaSelector struct {
 	d time.Duration
 }
 
-var tableName string = "panapi"
+var (
+	tableName   *C.char = C.CString("panapi")
+	Path        *C.char = C.CString("Path")
+	Fingerprint *C.char = C.CString("Fingerprint")
+)
 
 // func NewLuaSelector(script string) (*LuaSelector, error) {
 func NewSelector(state *State) rpc.ServerSelector {
@@ -184,7 +199,7 @@ func NewSelector(state *State) rpc.ServerSelector {
 	state.SetField(-2, "Now")
 	*/
 
-	state.SetGlobal(tableName)
+	state.SetCGlobal(tableName)
 
 	s := &LuaSelector{state, new_state(), time.Second}
 
@@ -194,7 +209,7 @@ func NewSelector(state *State) rpc.ServerSelector {
 			time.Sleep(s.d)
 			seconds := time.Since(old).Seconds()
 			s.Lock()
-			s.GetGlobal(tableName)
+			s.GetCGlobal(tableName)
 			s.GetField(-1, "Periodic")
 			s.PushNumber(seconds)
 			if err := s.Call(1, 0); err != nil {
@@ -213,7 +228,7 @@ func (s *LuaSelector) Initialize(prefs map[string]string, local, remote pan.UDPA
 	s.Lock()
 	defer s.Unlock()
 
-	s.GetGlobal(tableName)
+	s.GetCGlobal(tableName)
 	s.GetField(-1, "Initialize")
 	s.Remove(-2)
 	s.NewTable()
@@ -241,7 +256,7 @@ func (s *LuaSelector) SetPreferences(prefs map[string]string, local, remote pan.
 	s.Lock()
 	defer s.Unlock()
 
-	s.GetGlobal(tableName)
+	s.GetCGlobal(tableName)
 	s.GetField(-1, "SetPreferences")
 	s.Remove(-2)
 
@@ -263,8 +278,8 @@ func (s *LuaSelector) Path(local, remote pan.UDPAddr) (*pan.Path, error) {
 	s.Lock()
 	defer s.Unlock()
 
-	s.GetGlobal(tableName)
-	s.GetField(-1, "Path")
+	s.GetCGlobal(tableName)
+	s.GetCField(-1, Path)
 	s.Remove(-2)
 	s.PushString(local.String())
 	s.PushString(remote.String())
@@ -273,7 +288,7 @@ func (s *LuaSelector) Path(local, remote pan.UDPAddr) (*pan.Path, error) {
 		log.Println(err)
 		return nil, err
 	}
-	s.GetField(-1, "Fingerprint")
+	s.GetCField(-1, Fingerprint)
 	fingerprint := s.ToString(-1)
 	s.Pop(2) // pop path as well as its fingerprint
 	return s.state.ppaths[fingerprint], err
@@ -284,7 +299,7 @@ func (s *LuaSelector) PathDown(local, remote pan.UDPAddr, fp pan.PathFingerprint
 	s.Lock()
 	defer s.Unlock()
 
-	s.GetGlobal(tableName)
+	s.GetCGlobal(tableName)
 	s.GetField(-1, "PathDown")
 	s.Remove(-2)
 	s.PushString(local.String())
@@ -303,7 +318,7 @@ func (s *LuaSelector) Refresh(local, remote pan.UDPAddr, paths []*pan.Path) erro
 	s.Lock()
 	defer s.Unlock()
 
-	s.GetGlobal(tableName)
+	s.GetCGlobal(tableName)
 	s.GetField(-1, "Refresh")
 	s.Remove(-2)
 	s.PushString(local.String())
@@ -327,7 +342,7 @@ func (s *LuaSelector) Close(local, remote pan.UDPAddr) error {
 	s.Lock()
 	defer s.Unlock()
 
-	s.GetGlobal(tableName)
+	s.GetCGlobal(tableName)
 	s.GetField(-1, "Close")
 	s.Remove(-2)
 	s.PushString(local.String())
