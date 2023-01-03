@@ -62,6 +62,7 @@ var (
 	LossTimerExpired                 = C.CString("LossTimerExpired")
 	LossTimerCanceled                = C.CString("LossTimerCanceled")
 	Debug                            = C.CString("Debug")
+	Close                            = C.CString("Close")
 )
 
 func new_lua_parameters(p *logging.TransportParameters) *Table {
@@ -433,7 +434,21 @@ func (s *Stats) UpdatedMetrics(local, remote *pan.UDPAddr, rttStats *rpc.RTTStat
 	s.Remove(-2)
 	s.pushAsLuaString(local)
 	s.pushAsLuaString(remote)
-	s.PushTable(new_lua_rtt_stats(rttStats))
+	s.NewTable()
+	if rttStats != nil {
+		s.PushNumber(float64(rttStats.LatestRTT.Seconds()))
+		s.SetField(-2, "LatestRTT")
+		s.PushNumber(float64(rttStats.MaxAckDelay.Seconds()))
+		s.SetField(-2, "MaxAckDelay")
+		s.PushNumber(float64(rttStats.MeanDeviation.Seconds()))
+		s.SetField(-2, "MeanDeviation")
+		s.PushNumber(float64(rttStats.MinRTT.Seconds()))
+		s.SetField(-2, "MinRTT")
+		s.PushNumber(float64(rttStats.PTO.Seconds()))
+		s.SetField(-2, "PTO")
+		s.PushNumber(float64(rttStats.SmoothedRTT.Seconds()))
+		s.SetField(-2, "SmoothedRTT")
+	}
 	s.PushInteger(int64(cwnd))
 	s.PushInteger(int64(bytesInFlight))
 	s.PushInteger(int64(packetsInFlight))
