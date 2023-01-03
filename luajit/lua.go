@@ -144,12 +144,16 @@ func (s *State) Remove(index int) {
 	C.lua_remove(s.L, C.int(index))
 }
 
-func (s *State) SetField(index int, key string) {
-	C.lua_setfield(s.L, C.int(index), s.strptr(key))
+func (s *State) SetCField(index int, key *C.char) {
+	C.lua_setfield(s.L, C.int(index), key)
 }
 
 func (s *State) SetCGlobal(name *C.char) {
 	C.lua_setfield(s.L, C.LUA_GLOBALSINDEX, name)
+}
+
+func (s *State) SetField(index int, key string) {
+	C.lua_setfield(s.L, C.int(index), s.strptr(key))
 }
 
 func (s *State) SetGlobal(name string) {
