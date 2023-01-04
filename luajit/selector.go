@@ -148,7 +148,7 @@ type LuaSelector struct {
 }
 
 var (
-	tableName   *C.char = C.CString("panapi")
+	PANAPI      *C.char = C.CString("panapi")
 	Path        *C.char = C.CString("Path")
 	Fingerprint *C.char = C.CString("Fingerprint")
 )
@@ -181,7 +181,7 @@ func NewSelector(state *State) rpc.ServerSelector {
 	} {
 		/*s := fmt.Sprintf("Function %s not implemented in script", fn)
 		state.PushGoFunction(func(L *lua.State) int {
-			state.GetGlobal(tableName)
+			state.GetGlobal(PANAPI)
 			state.GetField(-1, "Log")
 			state.PushString(s)
 			state.Call(1, 0)
@@ -199,7 +199,7 @@ func NewSelector(state *State) rpc.ServerSelector {
 	state.SetField(-2, "Now")
 	*/
 
-	state.SetCGlobal(tableName)
+	state.SetCGlobal(PANAPI)
 
 	s := &LuaSelector{state, new_state(), time.Second}
 
@@ -209,7 +209,7 @@ func NewSelector(state *State) rpc.ServerSelector {
 			time.Sleep(s.d)
 			seconds := time.Since(old).Seconds()
 			s.Lock()
-			s.GetCGlobal(tableName)
+			s.GetCGlobal(PANAPI)
 			s.GetField(-1, "Periodic")
 			s.PushNumber(seconds)
 			if err := s.Call(1, 0); err != nil {
@@ -228,7 +228,7 @@ func (s *LuaSelector) Initialize(prefs map[string]string, local, remote pan.UDPA
 	s.Lock()
 	defer s.Unlock()
 
-	s.GetCGlobal(tableName)
+	s.GetCGlobal(PANAPI)
 	s.GetField(-1, "Initialize")
 	s.Remove(-2)
 	s.NewTable()
@@ -256,7 +256,7 @@ func (s *LuaSelector) SetPreferences(prefs map[string]string, local, remote pan.
 	s.Lock()
 	defer s.Unlock()
 
-	s.GetCGlobal(tableName)
+	s.GetCGlobal(PANAPI)
 	s.GetField(-1, "SetPreferences")
 	s.Remove(-2)
 
@@ -278,7 +278,7 @@ func (s *LuaSelector) Path(local, remote pan.UDPAddr) (*pan.Path, error) {
 	s.Lock()
 	defer s.Unlock()
 
-	s.GetCGlobal(tableName)
+	s.GetCGlobal(PANAPI)
 	s.GetCField(-1, Path)
 	s.Remove(-2)
 	s.PushString(local.String())
@@ -299,7 +299,7 @@ func (s *LuaSelector) PathDown(local, remote pan.UDPAddr, fp pan.PathFingerprint
 	s.Lock()
 	defer s.Unlock()
 
-	s.GetCGlobal(tableName)
+	s.GetCGlobal(PANAPI)
 	s.GetField(-1, "PathDown")
 	s.Remove(-2)
 	s.PushString(local.String())
@@ -318,7 +318,7 @@ func (s *LuaSelector) Refresh(local, remote pan.UDPAddr, paths []*pan.Path) erro
 	s.Lock()
 	defer s.Unlock()
 
-	s.GetCGlobal(tableName)
+	s.GetCGlobal(PANAPI)
 	s.GetField(-1, "Refresh")
 	s.Remove(-2)
 	s.PushString(local.String())
@@ -342,7 +342,7 @@ func (s *LuaSelector) Close(local, remote pan.UDPAddr) error {
 	s.Lock()
 	defer s.Unlock()
 
-	s.GetCGlobal(tableName)
+	s.GetCGlobal(PANAPI)
 	s.GetField(-1, "Close")
 	s.Remove(-2)
 	s.PushString(local.String())
